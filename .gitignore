@@ -1,0 +1,7 @@
+# Your secrets: copy .env.example to .env
+.env
+
+# Editors and OS
+.vscode/
+.DS_Store
+.env.student

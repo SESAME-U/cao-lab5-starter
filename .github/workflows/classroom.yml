@@ -1,0 +1,79 @@
+name: Autograding
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  checks: write
+  actions: read
+  contents: read
+
+jobs:
+  run-autograding-tests:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-classroom[bot]'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install hadolint
+        run: |
+          sudo curl -fsSL -o /usr/local/bin/hadolint \
+            https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-linux-x86_64
+          sudo chmod +x /usr/local/bin/hadolint
+
+      - name: Lint
+        id: lint
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: "Dockerfile: official base, plugins stage, hadolint clean"
+          command: bash tests/run.sh lint
+          timeout: 5
+          max-score: 1
+
+      - name: Image
+        id: image
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: "Image: WooCommerce, WP-CLI, PHP settings, healthcheck, labels, no secrets"
+          command: bash tests/run.sh image
+          timeout: 15
+          max-score: 3
+
+      - name: Run
+        id: run
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: "Containers: network, volumes, ports, health, shop installed"
+          command: bash tests/run.sh run
+          timeout: 20
+          max-score: 3
+
+      - name: Persist
+        id: persist
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: "Data survives the containers"
+          command: bash tests/run.sh persist
+          timeout: 25
+          max-score: 1
+
+      - name: Submission answered
+        id: submission
+        uses: classroom-resources/autograding-command-grader@v1
+        with:
+          test-name: "SUBMISSION.md complete"
+          command: bash scripts/check-submission.sh
+          timeout: 5
+          max-score: 2
+
+      - name: Autograding Reporter
+        uses: classroom-resources/autograding-grading-reporter@v1
+        env:
+          LINT_RESULTS: "${{ steps.lint.outputs.result }}"
+          IMAGE_RESULTS: "${{ steps.image.outputs.result }}"
+          RUN_RESULTS: "${{ steps.run.outputs.result }}"
+          PERSIST_RESULTS: "${{ steps.persist.outputs.result }}"
+          SUBMISSION_RESULTS: "${{ steps.submission.outputs.result }}"
+        with:
+          runners: lint,image,run,persist,submission

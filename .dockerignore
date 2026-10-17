@@ -1,0 +1,2 @@
+# Lab 5, Part B: keep the build context small and free of secrets.
+# TODO list at least: .git, .env, scripts/, tests/, *.md
